@@ -1,6 +1,6 @@
 let a = 2;
 let b;
 let urmom = 5;
-let c;
+let a;
 let d;
 a = 5;
