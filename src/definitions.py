@@ -18,12 +18,21 @@ class TokenType(Enum):
 
     KW_LET = auto()
 
+types_str = {TokenType.IDENT: 'variable name',
+             TokenType.SEMI: '`;`',
+             TokenType.EOF: 'end of file',
+             TokenType.ASSIGN: '=',
+             TokenType.INTLIT: 'int literal',
+             
+             TokenType.KW_LET: '`let` keyword'}
+
 keywords = {'let': TokenType.KW_LET}
 
 class Token():
-    def __init__(self, ttype: TokenType, val: int|None):
+    def __init__(self, ttype: TokenType, val: int|None, loc: tuple[int, int]):
         self.ttype = ttype
         self.val = val
+        self.loc = loc
 
     def __str__(self):
         return f"Token({self.ttype.name}, {self.val})"

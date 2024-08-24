@@ -4,7 +4,7 @@ from generation import Generator
 
 def main():
     code: str
-    with open('src\code.txt') as f:
+    with open('src/code.txt') as f:
         code = f.read()
     tokenizer = Tokenizer(code)
     tokens = tokenizer.get_tokens()
