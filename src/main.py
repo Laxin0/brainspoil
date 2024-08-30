@@ -1,6 +1,7 @@
 from tokenization import Tokenizer
 from parsing import Parser
 from generation import Generator
+from intepreter import Intepr
 
 def main():
     code: str
@@ -14,5 +15,9 @@ def main():
     gen = Generator(ir)
     bfcode = gen.generate_bf()
     print(bfcode)
+    inter = Intepr(bfcode, 32)
+    inter.run()
+    inter.dumpmem()
+    print(gen.vsp)
 
 main()

@@ -1,5 +1,7 @@
-from definitions import Token, TokenType, types_str
+from definitions import Token, TokenType, types_str, BinOpKind, binop_precs
 from irnodes import *
+
+# TODO: REWRITE THIS SHIT FROM SCRATCH
 
 class Parser():
     def __init__(self, tokens: list[Token]):
@@ -17,56 +19,121 @@ class Parser():
         print(f"[Error]: {msg}")
         exit(1)
 
-    def error_exp(self, exp_typ: TokenType, got_typ: TokenType, loc: tuple[int, int]):
-        print(f"[Error]: Expected {types_str[exp_typ]} but found {types_str[got_typ]} at {loc}")
-        exit(1)
+    def parse_intlit(self, i) -> tuple[NIntlit|ErrorExpect, int]:
+        if self.tokens[i].ttype != TokenType.INTLIT: return ErrorExpect(TokenType.INTLIT, self.tokens[i].ttype, self.tokens[i].loc), 0
+        lit = NIntlit(self.tokens[i].val)
+        return lit, i+1
 
-    def parse_declare(self) -> NDecl:
-        self.nextt()
-        if self.tok.ttype != TokenType.IDENT: self.error_exp(TokenType.IDENT, self.tok.ttype, self.tok.loc)
-        name = self.tok.val
-        if name in self.dec_vars: self.error(f"Variable name `{name}` already used. at {self.tok.loc}")
-        self.dec_vars.append(name)
-        self.nextt()
-        val = 0
-        if self.tok.ttype == TokenType.ASSIGN:
-            self.nextt()
-            if self.tok.ttype != TokenType.INTLIT: self.error_exp(TokenType.INTLIT, self.tok.ttype, self.tok.loc)
-            val = self.tok.val
-            self.nextt()
-        if self.tok.ttype != TokenType.SEMI: self.error_exp(TokenType.SEMI, self.tok.ttype, self.tok.loc)
-        self.nextt()
-        return NDecl(name, val)
     
-    def parse_assign(self) -> NAssign:
-        name = self.tok.val
-        if not(name in self.dec_vars): self.error(f"Undeclared variable `{name}` at {self.tok.loc}")
-        self.nextt()
-        if self.tok.ttype != TokenType.ASSIGN: self.error_exp(TokenType.ASSIGN, self.tok.ttype, self.tok.loc)
-        self.nextt()
-        if self.tok.ttype != TokenType.INTLIT: self.error_exp(TokenType.INTLIT, self.tok.ttype, self.tok.loc)
-        newval = self.tok.val
-        self.nextt()
-        if self.tok.ttype != TokenType.SEMI: self.error_exp(TokenType.SEMI, self.tok.ttype, self.tok.loc)
-        self.nextt()
-        return NAssign(name, newval)
+    def parse_ident(self, i) -> tuple[NIdent|ErrorExpect, int]:
+        if self.tokens[i].ttype != TokenType.IDENT: return ErrorExpect(TokenType.IDENT, self.tokens[i].ttype, self.tokens[i].loc), 0
+        ident = NIdent(self.tokens[i].val)
+        return ident, i+1
+    
+    def parse_expr(self, i,  min_prec) -> tuple[Expr|ErrorExpect, int]:
+        lhs, i = self.parse_term(i)
+        
+        if isinstance(lhs, ErrorExpect):
+            return lhs, 0
+
+        while True:
+            token = self.tokens[i]
+            if (token.ttype == TokenType.EOF or token.ttype != TokenType.BINOP or binop_precs[token.val] < min_prec):
+                break
+
+            assert token.ttype == TokenType.BINOP
+
+            op = token.val
+            prec = binop_precs[op]
+            next_min_prec = prec + 1
+
+            i += 1
+
+            rhs, i = self.parse_expr(i, next_min_prec)
+            
+            if isinstance(rhs, ErrorExpect):
+                return rhs, 0
+
+            lhs = NBinExpr(op, lhs, rhs)
+
+        return lhs, i
+
+    def parse_term(self, i) -> tuple[NIntlit|NIdent|Expr|ErrorExpect, int]:
+
+        intlit, ni = self.parse_intlit(i)
+        if isinstance(intlit, NIntlit):
+            return intlit, ni
+        
+        ident, ni = self.parse_ident(i)
+        if isinstance(ident, NIdent):
+            return ident, ni
+        
+        if self.tokens[i].ttype != TokenType.PAR_OP:
+            return ErrorExpect(TokenType.PAR_OP, self.tokens[i].ttype, self.tokens[i].loc), 0
+        
+        i += 1
+        expr, i = self.parse_expr(i, 1)
+
+        if isinstance(expr, ErrorExpect):
+            return expr, 0
+        
+        if self.tokens[i].ttype != TokenType.PAR_CL:
+            return ErrorExpect(TokenType.PAR_CL, self.tokens[i].ttype, self.tokens[i].loc), 0
+        
+        i += 1
+        return expr, i
+
+    def parse_declare(self, i) -> tuple[NDecl|ErrorExpect, int]:
+        if self.tokens[i].ttype != TokenType.KW_LET: return ErrorExpect(TokenType.KW_LET, self.tokens[i].ttype, self.tokens[i].loc), 0
+        i += 1
+        ident, i = self.parse_ident(i)
+        if isinstance(ident, ErrorExpect): return ident
+        if ident.name in self.dec_vars: self.error(f"Variable name `{ident.name}` already used. at {self.tokens[i].loc}")
+        self.dec_vars.append(ident.name)
+        val = NIntlit(0)
+        if self.tokens[i].ttype == TokenType.ASSIGN:
+            i += 1
+            val, i = self.parse_expr(i, 1)
+            if isinstance(val, ErrorExpect): return val, 0
+
+        if self.tokens[i].ttype != TokenType.SEMI: return ErrorExpect(TokenType.SEMI, self.tokens[i].ttype, self.tokens[i].loc), 0
+        i += 1
+        return NDecl(ident, val), i
+    
+    def parse_assign(self, i) -> tuple[NAssign|ErrorExpect, int]:
+        ident, i = self.parse_ident(i)
+        if isinstance(ident, ErrorExpect): return ident
+        if not(ident.name in self.dec_vars): self.error(f"Undeclared variable `{ident.name}` at {self.tokens[i].loc}")
+        if self.tokens[i].ttype != TokenType.ASSIGN: return ErrorExpect(TokenType.ASSIGN, self.tokens[i].ttype, self.tokens[i].loc), 0
+        i += 1
+        
+        newval, i = self.parse_expr(i, 1)
+
+        if isinstance(newval, ErrorExpect):
+            return newval, 0
+        
+        if self.tokens[i].ttype != TokenType.SEMI: self.error_exp(TokenType.SEMI, self.tokens[i].ttype, self.tokens[i].loc)
+        i+=1
+        return NAssign(ident, newval), i
 
     def parse_tokens(self):
-        self.i = 0
-        self.tok = self.tokens[0]
-
+        i = 0
         statements = []
         
-        while self.tok.ttype != TokenType.EOF:
-            if self.tok.ttype == TokenType.SEMI:
-                self.error(f"Statement can't starts with {types_str[TokenType.SEMI]} at {self.tok.loc}")
-            elif self.tok.ttype == TokenType.IDENT:
-                stmt = self.parse_assign()
+        while self.tokens[i].ttype != TokenType.EOF:
+            if self.tokens[i].ttype == TokenType.SEMI:
+                self.error(f"Statement can't starts with {types_str[TokenType.SEMI]} at {self.tokens[i].loc}")
+            elif self.tokens[i].ttype == TokenType.IDENT:
+                stmt, i = self.parse_assign(i)
+                if isinstance(stmt, ErrorExpect):
+                    stmt.report()
+
                 statements.append(stmt)
-            elif self.tok.ttype == TokenType.KW_LET:
-                stmt = self.parse_declare()
+            elif self.tokens[i].ttype == TokenType.KW_LET:
+                stmt, i = self.parse_declare(i)
+                if isinstance(stmt, ErrorExpect):
+                    stmt.report()
                 statements.append(stmt)
             else:
-                raise AssertionError(f"Unknown token type {self.tok.ttype.name} at {self.tok.loc}")
+                raise AssertionError(f"Unknown token type {self.tokens[i].ttype.name} at {self.tokens[i].loc}")
         return statements
-    

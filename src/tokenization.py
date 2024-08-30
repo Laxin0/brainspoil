@@ -1,4 +1,4 @@
-from definitions import TokenType, Token, keywords
+from definitions import TokenType, Token, keywords, BinOpKind, str_to_binopkind
     
 class Tokenizer():
     def __init__(self, src: str):
@@ -32,6 +32,19 @@ class Tokenizer():
                 cc += 1
             elif self.src[i] == '=':
                 tokens.append(Token(TokenType.ASSIGN, None, (lc, cc)))
+                i += 1
+                cc += 1
+            elif self.src[i] == '(':
+                tokens.append(Token(TokenType.PAR_OP, None, (lc, cc)))
+                i += 1
+                cc += 1
+            elif self.src[i] == ')':
+                tokens.append(Token(TokenType.PAR_CL, None, (lc, cc)))
+                i += 1
+                cc += 1
+            elif self.src[i] in '+-*/':
+                binopt = str_to_binopkind[self.src[i]]
+                tokens.append(Token(TokenType.BINOP, binopt, (lc, cc)))
                 i += 1
                 cc += 1
             elif self.src[i].isnumeric():

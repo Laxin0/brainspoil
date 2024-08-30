@@ -5,30 +5,109 @@ class Generator():
         self.statements = statements
         self.bfcode = ''
         self.headp = 0
-    
-    def gen_moveto(self, toaddr: int):
-        steps = toaddr-self.headp
-        if steps > 0:
-            self.bfcode += '>'*steps
-        else:
-            self.bfcode += '<'*(-steps)
-        self.headp += steps
+        self.variables = {}
+        self.vsp = 0
         
-
     def generate_bf(self) -> str:
-        bfvars = {}
-        vsp = 0
+        def to(toaddr: int):
+            steps = toaddr-self.headp
+            self.headp = toaddr
+            if steps > 0:
+                return '>'*steps
+            else:
+                return '<'*(-steps)
+    
+        def zero(a): return to(a) + '[-]'
+
+        def move(d, s):
+            return zero(d) + unsmove(d, s)
+        
+        def unsmove(d, s):
+            return to(s) + '[-' + to(d) + '+' + to(s) + ']'
+        
+        def copy(d, s, t):
+            return zero(d) + zero(t) + to(s) + '[-' + to(t) + '+' + to(d) + '+' + to(s) + ']' + unsmove(s, t)
+        
+        def addto(d, s, t):
+            return zero(t) + to(s) + '[-' + to(t) + '+' + to(d) + '+' + to(s) + ']' + unsmove(s, t)
+        
+        def sub(r, a, b, t):
+            return f'{copy(r, a, t)}{to(b)}[-{to(t)}+{to(r)}-{to(b)}]{unsmove(b, t)}'
+        
+        def add(s, a, b, t):
+            return copy(s, a, t) + addto(s, b, t)
+        
+        def setc(a, val):
+            return zero(a) + val*'+'
+
+        def gen_id(node: NIdent):
+            assert isinstance(node, NIdent)
+            return self.variables[node.name]
+        
+        def gen_int(node: NIntlit):
+            assert isinstance(node, NIntlit)
+            self.bfcode += setc(self.vsp, node.val)
+            self.vsp += 1
+            return self.vsp-1
+        
+        def gen_term(node: Term):
+            if isinstance(node, NIdent):
+                return gen_id(node)
+            elif isinstance(node, NIntlit):
+                return gen_int(node)
+            else:
+                assert False
+
+        def gen_binexpr(node: NBinExpr):
+            assert isinstance(node, NBinExpr)
+            res = self.vsp
+            self.vsp += 1
+
+            lhs = gen_expr(node.lhs)
+            rhs = gen_expr(node.rhs)
+
+            if node.op == BinOpKind.ADD:
+                self.bfcode += add(res, lhs, rhs, self.vsp+1)
+            elif node.op == BinOpKind.SUB:
+                self.bfcode += sub(res, lhs, rhs, self.vsp+1)
+            elif node.op == BinOpKind.MULT:
+                raise NotImplementedError()
+            elif node.op == BinOpKind.DIV:
+                raise NotImplementedError()
+            else:
+                assert False
+            
+            self.vsp = res + 1
+            return res
+
+        def gen_expr(node: Expr):
+            if isinstance(node, Term):
+                return gen_term(node)
+            elif isinstance(node, NBinExpr):
+                return gen_binexpr(node)
+            else:
+                assert False
+
+        def gen_decl(node: NDecl):
+            assert isinstance(node, NDecl)
+            val_a = gen_expr(node.val)
+            self.variables.update({node.varid.name: val_a})
+
+        def gen_assign(node: NAssign):
+            assert isinstance(node, NAssign)
+
+            vr = gen_id(node.varid)
+            vl = gen_expr(node.val)
+            self.bfcode += move(vr, vl)
+            self.vsp -= 1
+
         for stmt in self.statements:
             if isinstance(stmt, NDecl):
                 '''DECLARE'''
-                bfvars.update({stmt.varname: vsp})
-                self.gen_moveto(vsp)
-                self.bfcode += '[-]' + '+'*stmt.val
-                vsp += 1
+                gen_decl(stmt)
 
             elif isinstance(stmt, NAssign):
                 '''ASSIGN'''
-                self.gen_moveto(bfvars[stmt.varname])
-                self.bfcode += '[-]' + '+'*stmt.val
+                gen_assign(stmt)
 
         return self.bfcode
