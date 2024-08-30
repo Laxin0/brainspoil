@@ -20,6 +20,10 @@ class NDecl(Statement):
 class NPrint(Statement):
     def __init__(self, expr: Expr):
         self.expr = expr
+    
+class NRead(Statement):
+    def __init__(self, ident: NIdent):
+        self.ident = ident
 
 class NAssign(Statement):
     def __init__(self, vid: NIdent, val: Expr):
@@ -34,7 +38,7 @@ class NBinExpr(Expr):
 
 class ErrorExpect():
     def __init__(self, exp_type: TokenType, got_typ: TokenType, loc: tuple[int, int]):
-        self.msg = f"[Error]: Expected {types_str[exp_type]} but found {types_str[got_typ]} at {loc}"
+        self.msg = f"[Error] at {loc} : Expected {types_str[exp_type]} but found {types_str[got_typ]}"
 
     def report(self):
         print(self.msg)

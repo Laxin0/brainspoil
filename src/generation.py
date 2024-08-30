@@ -118,6 +118,11 @@ class Generator():
             if not(val_a in self.variables.values()):
                 self.vsp -= 1
 
+        def gen_read(node: NRead):
+            assert isinstance(node, NRead)
+            addr = gen_id(node.ident)
+            self.bfcode += to(addr) + ','
+        
         for stmt in self.statements:
             if isinstance(stmt, NDecl):
                 '''DECLARE'''
@@ -130,5 +135,11 @@ class Generator():
             elif isinstance(stmt, NPrint):
                 '''PRINT'''
                 gen_print(stmt)
+            
+            elif isinstance(stmt, NRead):
+                '''READ'''
+                gen_read(stmt)
+            else:
+                assert False
 
         return self.bfcode

@@ -66,7 +66,10 @@ class Parser():
         
         ident, ni = self.parse_ident(i)
         if isinstance(ident, NIdent):
-            return ident, ni
+            if ident.name in self.dec_vars:
+                return ident, ni
+            else:
+                self.error(f"Undeclared variable `{ident.name}` at {self.tokens[i-1].loc}")
         
         if self.tokens[i].ttype != TokenType.PAR_OP:
             return ErrorExpect(TokenType.PAR_OP, self.tokens[i].ttype, self.tokens[i].loc), 0
@@ -122,12 +125,27 @@ class Parser():
 
         expr, i = self.parse_expr(i, 1)
         if isinstance(expr, ErrorExpect):
-            return expr
+            return expr, 0
         
         if self.tokens[i].ttype != TokenType.SEMI: return ErrorExpect(TokenType.SEMI, self.tokens[i].ttype, self.tokens[i].loc), 0
         i += 1
         return NPrint(expr), i
+
+    def parse_read(self, i) -> tuple[NRead|ErrorExpect, int]:
+        if self.tokens[i].ttype != TokenType.KW_READ: return ErrorExpect(TokenType.KW_READ, self.tokens[i].ttype, self.tokens[i].loc), 0
+        i += 1
     
+        ident, i = self.parse_ident(i)
+        if isinstance(ident, ErrorExpect):
+            return ident, 0
+        
+        if not(ident.name in self.dec_vars):
+            self.error(f"Undeclared variable `{ident.name}` at {self.tokens[i-1].loc}")
+        
+        if self.tokens[i].ttype != TokenType.SEMI: return ErrorExpect(TokenType.SEMI, self.tokens[i].ttype, self.tokens[i].loc), 0
+        i += 1
+        return NRead(ident), i
+        
     def parse_tokens(self):
         i = 0
         statements = []
@@ -148,6 +166,11 @@ class Parser():
                 statements.append(stmt)
             elif self.tokens[i].ttype == TokenType.KW_PRINT:
                 stmt, i = self.parse_print(i)
+                if isinstance(stmt, ErrorExpect):
+                    stmt.report()
+                statements.append(stmt)
+            elif self.tokens[i].ttype == TokenType.KW_READ:
+                stmt, i= self.parse_read(i)
                 if isinstance(stmt, ErrorExpect):
                     stmt.report()
                 statements.append(stmt)
