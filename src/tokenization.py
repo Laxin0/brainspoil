@@ -54,6 +54,12 @@ class Tokenizer():
                     i += 1
                     cc += 1
                 tokens.append(Token(TokenType.INTLIT, int(buf)%256, (lc, cc)))
+            elif self.src[i] == '#':
+                while self.src[i] != '\n' and i < len(self.src):
+                    i += 1
+                i += 1
+                cc = 1
+                lc += 1
             else:
                 raise AssertionError("invalid token")
         tokens.append(Token(TokenType.EOF, None, (lc, cc)))
