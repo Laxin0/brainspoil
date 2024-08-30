@@ -17,6 +17,10 @@ class NDecl(Statement):
         self.varid = vid
         self.val = val
 
+class NPrint(Statement):
+    def __init__(self, expr: Expr):
+        self.expr = expr
+
 class NAssign(Statement):
     def __init__(self, vid: NIdent, val: Expr):
         self.varid = vid
@@ -35,6 +39,7 @@ class ErrorExpect():
     def report(self):
         print(self.msg)
         exit(1)
+
 
 
 

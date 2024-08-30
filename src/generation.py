@@ -67,9 +67,9 @@ class Generator():
             rhs = gen_expr(node.rhs)
 
             if node.op == BinOpKind.ADD:
-                self.bfcode += add(res, lhs, rhs, self.vsp+1)
+                self.bfcode += add(res, lhs, rhs, self.vsp)
             elif node.op == BinOpKind.SUB:
-                self.bfcode += sub(res, lhs, rhs, self.vsp+1)
+                self.bfcode += sub(res, lhs, rhs, self.vsp)
             elif node.op == BinOpKind.MULT:
                 raise NotImplementedError()
             elif node.op == BinOpKind.DIV:
@@ -91,15 +91,32 @@ class Generator():
         def gen_decl(node: NDecl):
             assert isinstance(node, NDecl)
             val_a = gen_expr(node.val)
-            self.variables.update({node.varid.name: val_a})
+            if val_a in self.variables.values():
+                var_a = self.vsp
+                self.vsp += 1
+                self.bfcode += copy(var_a, val_a, self.vsp)
+                self.variables.update({node.varid.name: var_a})
+            else:
+                self.variables.update({node.varid.name: val_a})
+
 
         def gen_assign(node: NAssign):
             assert isinstance(node, NAssign)
 
-            vr = gen_id(node.varid)
-            vl = gen_expr(node.val)
-            self.bfcode += move(vr, vl)
-            self.vsp -= 1
+            var_a = gen_id(node.varid)
+            val_a = gen_expr(node.val)
+            if val_a in self.variables.values():
+                self.bfcode += copy(var_a, val_a, self.vsp)
+            else:
+                self.bfcode += move(var_a, val_a)
+                self.vsp = val_a
+
+        def gen_print(node: NPrint):
+            assert isinstance(node, NPrint)
+            val_a = gen_expr(node.expr)
+            self.bfcode += to(val_a) + '.'
+            if not(val_a in self.variables.values()):
+                self.vsp -= 1
 
         for stmt in self.statements:
             if isinstance(stmt, NDecl):
@@ -109,5 +126,9 @@ class Generator():
             elif isinstance(stmt, NAssign):
                 '''ASSIGN'''
                 gen_assign(stmt)
+            
+            elif isinstance(stmt, NPrint):
+                '''PRINT'''
+                gen_print(stmt)
 
         return self.bfcode

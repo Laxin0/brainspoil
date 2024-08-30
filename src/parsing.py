@@ -116,6 +116,18 @@ class Parser():
         i+=1
         return NAssign(ident, newval), i
 
+    def parse_print(self, i) -> tuple[NPrint|ErrorExpect, int]:
+        if self.tokens[i].ttype != TokenType.KW_PRINT: return ErrorExpect(TokenType.KW_PRINT, self.tokens[i].ttype, self.tokens[i].loc), 0
+        i += 1
+
+        expr, i = self.parse_expr(i, 1)
+        if isinstance(expr, ErrorExpect):
+            return expr
+        
+        if self.tokens[i].ttype != TokenType.SEMI: return ErrorExpect(TokenType.SEMI, self.tokens[i].ttype, self.tokens[i].loc), 0
+        i += 1
+        return NPrint(expr), i
+    
     def parse_tokens(self):
         i = 0
         statements = []
@@ -131,6 +143,11 @@ class Parser():
                 statements.append(stmt)
             elif self.tokens[i].ttype == TokenType.KW_LET:
                 stmt, i = self.parse_declare(i)
+                if isinstance(stmt, ErrorExpect):
+                    stmt.report()
+                statements.append(stmt)
+            elif self.tokens[i].ttype == TokenType.KW_PRINT:
+                stmt, i = self.parse_print(i)
                 if isinstance(stmt, ErrorExpect):
                     stmt.report()
                 statements.append(stmt)

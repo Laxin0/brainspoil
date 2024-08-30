@@ -42,7 +42,8 @@ class TokenType(Enum):
 
     INTLIT = auto(),
 
-    KW_LET = auto()
+    KW_LET = auto(),
+    KW_PRINT = auto()
 
 types_str = {TokenType.IDENT: 'variable name',
              TokenType.SEMI: '`;`',
@@ -53,9 +54,11 @@ types_str = {TokenType.IDENT: 'variable name',
              TokenType.PAR_CL: '`)`',
              
              TokenType.BINOP: '`+`, `-`, `*` or `/`',
-             TokenType.KW_LET: '`let` keyword'}
+             TokenType.KW_LET: '`let` keyword',
+             TokenType.KW_PRINT: '`print` keyword'}
 
-keywords = {'let': TokenType.KW_LET}
+keywords = {'let': TokenType.KW_LET,
+            'print': TokenType.KW_PRINT}
 
 class Token():
     def __init__(self, ttype: TokenType, val: int|None|BinOpKind, loc: tuple[int, int]):
