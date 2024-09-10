@@ -1,12 +1,11 @@
 
 let a = 7+8;
 print a;
-read a;
 print a;
-{
-    let g;
-    print 6;
-}
+let a;
+let g;
+print 6;
+
 #let b;
 #let urmom = 5;
 #let d = b;

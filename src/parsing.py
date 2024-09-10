@@ -8,8 +8,6 @@ class Parser():
         self.tokens = tokens
         self.i = 0
         self.tok = None
-        self.dec_vars: list[str] = []
-
 
     def nextt(self):
         self.i += 1
@@ -27,7 +25,7 @@ class Parser():
     
     def parse_ident(self, i) -> tuple[NIdent|ErrorExpect, int]:
         if self.tokens[i].ttype != TokenType.IDENT: return ErrorExpect(TokenType.IDENT, self.tokens[i].ttype, self.tokens[i].loc), 0
-        ident = NIdent(self.tokens[i].val)
+        ident = NIdent(self.tokens[i])
         return ident, i+1
     
     def parse_expr(self, i,  min_prec) -> tuple[Expr|ErrorExpect, int]:
@@ -66,10 +64,7 @@ class Parser():
         
         ident, ni = self.parse_ident(i)
         if isinstance(ident, NIdent):
-            if ident.name in self.dec_vars:
-                return ident, ni
-            else:
-                self.error(f"Undeclared variable `{ident.name}` at {self.tokens[i-1].loc}")
+            return ident, ni
         
         if self.tokens[i].ttype != TokenType.PAR_OP:
             return ErrorExpect(TokenType.PAR_OP, self.tokens[i].ttype, self.tokens[i].loc), 0
@@ -91,8 +86,6 @@ class Parser():
         i += 1
         ident, i = self.parse_ident(i)
         if isinstance(ident, ErrorExpect): return ident
-        if ident.name in self.dec_vars: self.error(f"Variable name `{ident.name}` already used. at {self.tokens[i].loc}")
-        self.dec_vars.append(ident.name)
         val = NIntlit(0)
         if self.tokens[i].ttype == TokenType.ASSIGN:
             i += 1
@@ -106,7 +99,6 @@ class Parser():
     def parse_assign(self, i) -> tuple[NAssign|ErrorExpect, int]:
         ident, i = self.parse_ident(i)
         if isinstance(ident, ErrorExpect): return ident
-        if not(ident.name in self.dec_vars): self.error(f"Undeclared variable `{ident.name}` at {self.tokens[i].loc}")
         if self.tokens[i].ttype != TokenType.ASSIGN: return ErrorExpect(TokenType.ASSIGN, self.tokens[i].ttype, self.tokens[i].loc), 0
         i += 1
         
@@ -138,9 +130,6 @@ class Parser():
         ident, i = self.parse_ident(i)
         if isinstance(ident, ErrorExpect):
             return ident, 0
-        
-        if not(ident.name in self.dec_vars):
-            self.error(f"Undeclared variable `{ident.name}` at {self.tokens[i-1].loc}")
         
         if self.tokens[i].ttype != TokenType.SEMI: return ErrorExpect(TokenType.SEMI, self.tokens[i].ttype, self.tokens[i].loc), 0
         i += 1

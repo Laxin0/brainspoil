@@ -1,4 +1,4 @@
-from definitions import TokenType, types_str, BinOpKind
+from definitions import TokenType, types_str, BinOpKind, Token
 
 class Statement(): pass
 class Expr(): pass
@@ -9,8 +9,8 @@ class NIntlit(Term):
         self.val = val
 
 class NIdent(Term):
-    def __init__(self, name: str):
-        self.name = name
+    def __init__(self, tok: Token):
+        self.tok = tok
 
 class NDecl(Statement):
     def __init__(self, vid: NIdent, val: Expr):
