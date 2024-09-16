@@ -1,2 +1,4 @@
 .mypy_cache
 src/__pycache__
+*swp
+test/
