@@ -7,7 +7,11 @@ class Generator():
         self.headp = 0
         self.variables = {}
         self.vsp = 0
-        
+    
+    def error(self, msg):
+        print("[Error]:", msg)
+        exit(1)
+
     def generate_bf(self) -> str:
         def to(toaddr: int):
             steps = toaddr-self.headp
@@ -42,7 +46,10 @@ class Generator():
 
         def gen_id(node: NIdent):
             assert isinstance(node, NIdent)
-            return self.variables[node.name]
+            if node.tok.val in self.variables.keys():
+                return self.variables[node.tok.val]
+            else:
+                self.error(f"Using undeclared variable `{node.tok.val}` at {node.tok.loc}")
         
         def gen_int(node: NIntlit):
             assert isinstance(node, NIntlit)
@@ -91,13 +98,16 @@ class Generator():
         def gen_decl(node: NDecl):
             assert isinstance(node, NDecl)
             val_a = gen_expr(node.val)
+            var_tok = node.varid.tok
+            if var_tok.val in self.variables.keys():
+                self.error(f"Redeclaring variable `{var_tok.val}` at {var_tok.loc}")
             if val_a in self.variables.values():
                 var_a = self.vsp
                 self.vsp += 1
                 self.bfcode += copy(var_a, val_a, self.vsp)
-                self.variables.update({node.varid.name: var_a})
+                self.variables.update({node.varid.tok.val: var_a})
             else:
-                self.variables.update({node.varid.name: val_a})
+                self.variables.update({node.varid.tok.val: val_a})
 
 
         def gen_assign(node: NAssign):

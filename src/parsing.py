@@ -8,8 +8,6 @@ class Parser():
         self.tokens = tokens
         self.i = 0
         self.tok = None
-        self.dec_vars: list[str] = []
-
 
     def nextt(self):
         self.i += 1
@@ -32,11 +30,17 @@ class Parser():
             return NIntlit(intlit.val), i
     
     def parse_ident(self, i) -> tuple[NIdent|ErrorExpect, int]:
+<<<<<<< HEAD
         ident, i = self.parse_token(TokenType.IDENT, i)
         if isinstance(ident, ErrorExpect):
             return ident, i
         else:
             return NIdent(ident.val), i
+=======
+        if self.tokens[i].ttype != TokenType.IDENT: return ErrorExpect(TokenType.IDENT, self.tokens[i].ttype, self.tokens[i].loc), 0
+        ident = NIdent(self.tokens[i])
+        return ident, i+1
+>>>>>>> e48e62dd1cf0eb4b334c61d34de94d53a1a2190a
     
     def parse_expr(self, i,  min_prec) -> tuple[Expr|ErrorExpect, int]:
         # TODO: rewrite this shit
@@ -75,10 +79,7 @@ class Parser():
         
         ident, ni = self.parse_ident(i)
         if isinstance(ident, NIdent):
-            if ident.name in self.dec_vars:
-                return ident, ni
-            else:
-                self.error(f"Undeclared variable `{ident.name}` at {self.tokens[i-1].loc}")
+            return ident, ni
         
         par_op_t, i = self.parse_token(TokenType.PAR_OP, i)
         if isinstance(par_op_t, ErrorExpect):
@@ -102,6 +103,7 @@ class Parser():
             return kw_let, 0
 
         ident, i = self.parse_ident(i)
+<<<<<<< HEAD
         if isinstance(ident, ErrorExpect): return ident, 0
 
         if ident.name in self.dec_vars:
@@ -110,6 +112,9 @@ class Parser():
 
 
         self.dec_vars.append(ident.name)
+=======
+        if isinstance(ident, ErrorExpect): return ident
+>>>>>>> e48e62dd1cf0eb4b334c61d34de94d53a1a2190a
         val = NIntlit(0)
         assi, i = self.parse_token(TokenType.ASSIGN, i)
         if isinstance(assi, Token):
@@ -123,7 +128,6 @@ class Parser():
     def parse_assign(self, i) -> tuple[NAssign|ErrorExpect, int]:
         ident, i = self.parse_ident(i)
         if isinstance(ident, ErrorExpect): return ident
-        if not(ident.name in self.dec_vars): self.error(f"Undeclared variable `{ident.name}` at {self.tokens[i].loc}")
         if self.tokens[i].ttype != TokenType.ASSIGN: return ErrorExpect(TokenType.ASSIGN, self.tokens[i].ttype, self.tokens[i].loc), 0
         i += 1
         
@@ -155,9 +159,6 @@ class Parser():
         ident, i = self.parse_ident(i)
         if isinstance(ident, ErrorExpect):
             return ident, 0
-        
-        if not(ident.name in self.dec_vars):
-            self.error(f"Undeclared variable `{ident.name}` at {self.tokens[i-1].loc}")
         
         if self.tokens[i].ttype != TokenType.SEMI: return ErrorExpect(TokenType.SEMI, self.tokens[i].ttype, self.tokens[i].loc), 0
         i += 1
