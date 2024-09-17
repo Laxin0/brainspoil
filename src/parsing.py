@@ -9,13 +9,6 @@ class Parser():
         self.i = 0
         self.tok = None
 
-    def nextt(self):
-        self.i += 1
-        self.tok = self.tokens[self.i]
-    
-    def error(self, msg: str):
-        print(f"[Error]: {msg}")
-        exit(1)
     def parse_token(self,  ttype:TokenType, i) -> tuple[ErrorExpect|Token, int]:
         if self.tokens[i].ttype == ttype:
             return self.tokens[i], i+1
@@ -30,20 +23,14 @@ class Parser():
             return NIntlit(intlit.val), i
     
     def parse_ident(self, i) -> tuple[NIdent|ErrorExpect, int]:
-<<<<<<< HEAD
         ident, i = self.parse_token(TokenType.IDENT, i)
         if isinstance(ident, ErrorExpect):
             return ident, i
         else:
-            return NIdent(ident.val), i
-=======
-        if self.tokens[i].ttype != TokenType.IDENT: return ErrorExpect(TokenType.IDENT, self.tokens[i].ttype, self.tokens[i].loc), 0
-        ident = NIdent(self.tokens[i])
-        return ident, i+1
->>>>>>> e48e62dd1cf0eb4b334c61d34de94d53a1a2190a
-    
+            return NIdent(ident), i
+
     def parse_expr(self, i,  min_prec) -> tuple[Expr|ErrorExpect, int]:
-        # TODO: rewrite this shit
+        # TODO: did't touch yet
         lhs, i = self.parse_term(i)
         
         if isinstance(lhs, ErrorExpect):
@@ -81,87 +68,103 @@ class Parser():
         if isinstance(ident, NIdent):
             return ident, ni
         
-        par_op_t, i = self.parse_token(TokenType.PAR_OP, i)
+        par_op_t, ni = self.parse_token(TokenType.PAR_OP, i)
         if isinstance(par_op_t, ErrorExpect):
             return par_op_t, 0
 
-        expr, i = self.parse_expr(i, 1)
+        expr, ni = self.parse_expr(ni, 1)
 
         if isinstance(expr, ErrorExpect):
             return expr, 0
 
-        par_cl_t, i = self.parse_token(TokenType.PAR_CL, i)
+        par_cl_t, ni = self.parse_token(TokenType.PAR_CL, ni)
         if isinstance(par_cl_t, ErrorExpect):
             return par_cl_t, 0
 
-        return expr, i
+        return expr, ni
 
     def parse_declare(self, i) -> tuple[NDecl|ErrorExpect, int]:
-        print(self.dec_vars)
         kw_let, i = self.parse_token(TokenType.KW_LET, i)
         if isinstance(kw_let, ErrorExpect):
             return kw_let, 0
-
+        # let ...
         ident, i = self.parse_ident(i)
-<<<<<<< HEAD
-        if isinstance(ident, ErrorExpect): return ident, 0
 
-        if ident.name in self.dec_vars:
-            print(self.dec_vars)
-            self.error(f"Variable name `{ident.name}` already used. at {self.tokens[i].loc}")
+        if isinstance(ident, ErrorExpect):
+            return ident, 0
+        # let id ...
 
-
-        self.dec_vars.append(ident.name)
-=======
-        if isinstance(ident, ErrorExpect): return ident
->>>>>>> e48e62dd1cf0eb4b334c61d34de94d53a1a2190a
-        val = NIntlit(0)
-        assi, i = self.parse_token(TokenType.ASSIGN, i)
-        if isinstance(assi, Token):
+        assi, ni = self.parse_token(TokenType.ASSIGN, i)
+        if isinstance(assi, ErrorExpect):
+            semi, i = self.parse_token(TokenType.SEMI, i)
+            if isinstance(semi, ErrorExpect):
+                return semi, 0
+            # let id ;
+            return NDecl(ident, NIntlit(0)), i
+        else:
+            # let id = ...
+            i = ni
             val, i = self.parse_expr(i, 1)
             if isinstance(val, ErrorExpect):
                 return val, 0
-
-        semi, i = self.parse_token(TokenType.SEMI, i)
-        return NDecl(ident, val), i
+            
+            # let id = (epr) ...
+            semi, i = self.parse_token(TokenType.SEMI, i)
+            if isinstance(semi, ErrorExpect):
+                return semi, 0
+            
+            # let id = (epr) ;
+            return NDecl(ident, val), i
+        
     
     def parse_assign(self, i) -> tuple[NAssign|ErrorExpect, int]:
         ident, i = self.parse_ident(i)
-        if isinstance(ident, ErrorExpect): return ident
-        if self.tokens[i].ttype != TokenType.ASSIGN: return ErrorExpect(TokenType.ASSIGN, self.tokens[i].ttype, self.tokens[i].loc), 0
-        i += 1
+        if isinstance(ident, ErrorExpect):
+            return ident, 0
+        
+        assi, i = self.parse_token(TokenType.ASSIGN, i)
+        if isinstance(assi, ErrorExpect):
+            return assi, 0
         
         newval, i = self.parse_expr(i, 1)
 
         if isinstance(newval, ErrorExpect):
             return newval, 0
         
-        if self.tokens[i].ttype != TokenType.SEMI: self.error_exp(TokenType.SEMI, self.tokens[i].ttype, self.tokens[i].loc)
-        i+=1
+        semi, i = self.parse_token(TokenType.SEMI, i)
+        if isinstance(semi, ErrorExpect):
+            return semi, 0
+        
         return NAssign(ident, newval), i
 
     def parse_print(self, i) -> tuple[NPrint|ErrorExpect, int]:
-        if self.tokens[i].ttype != TokenType.KW_PRINT: return ErrorExpect(TokenType.KW_PRINT, self.tokens[i].ttype, self.tokens[i].loc), 0
-        i += 1
+        print_kw, i = self.parse_token(TokenType.KW_PRINT, i)
+        if isinstance(print_kw, ErrorExpect):
+            return print_kw, 0
 
         expr, i = self.parse_expr(i, 1)
         if isinstance(expr, ErrorExpect):
             return expr, 0
         
-        if self.tokens[i].ttype != TokenType.SEMI: return ErrorExpect(TokenType.SEMI, self.tokens[i].ttype, self.tokens[i].loc), 0
-        i += 1
+        semi, i = self.parse_token(TokenType.SEMI, i)
+        if isinstance(semi, ErrorExpect):
+            return semi, 0
+
         return NPrint(expr), i
 
     def parse_read(self, i) -> tuple[NRead|ErrorExpect, int]:
-        if self.tokens[i].ttype != TokenType.KW_READ: return ErrorExpect(TokenType.KW_READ, self.tokens[i].ttype, self.tokens[i].loc), 0
-        i += 1
+        read_kw, i = self.parse_token(TokenType.KW_READ, i)
+        if isinstance(read_kw, ErrorExpect):
+            return read_kw, 0
     
         ident, i = self.parse_ident(i)
         if isinstance(ident, ErrorExpect):
             return ident, 0
         
-        if self.tokens[i].ttype != TokenType.SEMI: return ErrorExpect(TokenType.SEMI, self.tokens[i].ttype, self.tokens[i].loc), 0
-        i += 1
+        semi, i = self.parse_token(TokenType.SEMI, i)
+        if isinstance(semi, ErrorExpect):
+            return semi, 0
+        
         return NRead(ident), i
         
     def parse_tokens(self):
@@ -170,7 +173,8 @@ class Parser():
         
         while self.tokens[i].ttype != TokenType.EOF:
             if self.tokens[i].ttype == TokenType.SEMI:
-                self.error(f"Statement can't starts with {types_str[TokenType.SEMI]} at {self.tokens[i].loc}")
+                print(f"Statement can't starts with {types_str[TokenType.SEMI]} at {self.tokens[i].loc}")
+                exit(1)
             elif self.tokens[i].ttype == TokenType.IDENT:
                 stmt, i = self.parse_assign(i)
                 if isinstance(stmt, ErrorExpect):
