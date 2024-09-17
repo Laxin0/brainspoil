@@ -46,9 +46,9 @@ let b = 2;
 let c = a + (b - 3);
 ```
 **Note:**
-Only supports *subtraction* and *addition* in expressions (yet).
-By default variable value is 0.
-Only integers below 256 (this is how brainfuck works)
+- Only supports *subtraction* and *addition* in expressions (yet).
+- By default variable value is 0.
+- Only integers below 256 (this is how brainfuck works)
  
 ### Variables reassigning
 ```
@@ -66,5 +66,5 @@ print char;
 ```
 
 **Note:**
-`print` statement prints a character with the corresponding askii code
-`read` statement read a charcter from terminal and store it like askii code
+- `print` statement prints a character with the corresponding askii code
+- `read` statement read a charcter from terminal and store it like askii code
