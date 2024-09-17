@@ -29,6 +29,14 @@ Usage: <your python> brainspoil/src/brainspoil.py <command>
                                                         (by defautl it is 1024)
 ```
 
+**Example:**
+```
+python brainspoil/src/brainspoil.py com test.bs -o compiled_test.bf
+```
+```
+python brainspoil/src/brainspoil.py runbf compiled_test.bf
+```
+
 # Brainspoil lang
 
 ### Variables declaring
