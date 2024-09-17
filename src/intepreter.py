@@ -46,8 +46,8 @@ class Intepr():
                         if self.code[pc] == ']':
                             stack += 1
             else:
-                print(f"inpalid character at {pc}")
-                return
+                pass
+            
             pc += 1
 
     def dumpmem(self):
