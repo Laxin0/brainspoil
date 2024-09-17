@@ -20,12 +20,14 @@ git clone https://laxin0/brainspoil.git
 ```
 
 ### Usage
-`Usage: <your python> brainspoil/src/brainspoil.py <command>
+```
+Usage: <your python> brainspoil/src/brainspoil.py <command>
     commands: 
         com <code.bs> [-o <out_filename>]               Compile brainspoil code to brainfuck
 
         runbf <your_code.bf> [-tl <tape length>]        Run brainfuck code. You can specify tape length
-                                                        (by defautl it is 1024)`
+                                                        (by defautl it is 1024)
+```
 
 # Brainspoil lang
 
