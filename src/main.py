@@ -5,7 +5,7 @@ from intepreter import Intepr
 
 def main():
     code: str
-    with open('src/code.txt') as f:
+    with open('./code.txt') as f:
         code = f.read()
     print('len =', len(code))
     print(code.replace('\n', '\\n'))
