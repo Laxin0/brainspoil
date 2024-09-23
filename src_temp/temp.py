@@ -108,6 +108,7 @@ class Parser():
             return NDecl(ident, NIntlit(0)), i
         else:
             # let id = ...
+            i = ni
             val, i = self.parse_expr(i, 1)
             if isinstance(val, ErrorExpect):
                 return val, i
@@ -184,7 +185,7 @@ class Parser():
         if isinstance(prin, NPrint):
             return prin, i
 
-        read, i = self.parse_read(i)
+        read, i = self.parse_print(i)
         if isinstance(read, NRead):
             return read, i
 
@@ -243,7 +244,7 @@ class Parser():
         i = 0
 
         statements = []
-        while self.peek_token(i).ttype != TokenType.EOF:
+        while self.peek_token(ni).ttype != TokenType.EOF:
             stmt, i = self.parse_statement(i)
             if isinstance(stmt, ErrorExpect):
                 stmt.report()

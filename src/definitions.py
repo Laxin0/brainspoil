@@ -44,7 +44,12 @@ class TokenType(Enum):
 
     KW_LET = auto(),
     KW_PRINT = auto(),
-    KW_READ = auto()
+    KW_READ = auto(),
+    KW_IF = auto(),
+    KW_ELSE = auto(),
+
+    CUR_OP = auto(),
+    CUR_CL = auto()
 
 types_str = {TokenType.IDENT: 'variable name',
              TokenType.SEMI: '`;`',
@@ -53,15 +58,20 @@ types_str = {TokenType.IDENT: 'variable name',
              TokenType.INTLIT: 'int literal',
              TokenType.PAR_OP: '`(`',
              TokenType.PAR_CL: '`)`',
-             
+             TokenType.CUR_OP: '`{`',
+             TokenType.CUR_CL: '`}`',
              TokenType.BINOP: '`+`, `-`, `*` or `/`',
              TokenType.KW_LET: '`let` keyword',
              TokenType.KW_PRINT: '`print` keyword',
-             TokenType.KW_READ: '`read` keyword'}
+             TokenType.KW_READ: '`read` keyword',
+             TokenType.KW_IF: '`if` keyword',
+             TokenType.KW_ELSE: '`else` keyword'}
 
 keywords = {'let': TokenType.KW_LET,
             'print': TokenType.KW_PRINT,
-            'read': TokenType.KW_READ}
+            'read': TokenType.KW_READ,
+            'if': TokenType.KW_IF,
+            'else': TokenType.KW_ELSE}
 
 class Token():
     def __init__(self, ttype: TokenType, val: int|None|BinOpKind, loc: tuple[int, int]):
