@@ -133,6 +133,18 @@ class Generator():
             addr = gen_id(node.ident)
             self.bfcode += to(addr) + ','
         
+        def gen_ifelse(node: NIfElse):
+            assert isinstance(node, NIfElse)
+            if node.false_scope is None:
+                cond = gen_expr(node.cond)
+                self.bfcode += to(cond) + '['
+                gen_scope(node.true_scope)
+                self.bfcode += to(self.vsp) + '[-]]'
+            else:
+                t = self.v
+                self.bfcode += f'{to(t)}[-]+{to(cond)}['
+                gen_scope
+        
         def gen_scope(node: NScope):
             assert isinstance(node, NScope)
             temp = self.vsp

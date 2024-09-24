@@ -1,0 +1,8 @@
+to(t) [-] + to(cond)
+    [ true to(t) [-] ]
+to(t)
+    [ false to(t) [-] ]
+
+cond t
+
+to(cond) [ true to(t) [-] ]
